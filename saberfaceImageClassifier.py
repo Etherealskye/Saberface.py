@@ -14,7 +14,7 @@ import pathlib
 
 load_dotenv()
 # Path to save your model at 
-CHECKPOINT_PATH = os.getenv('CHECKPOINT_PATH')
+CHECKPOINT_PATH = os.getenv('CHECKPOINT_PATH_V2')
 # Create checkpoint paths to save the model at 
 checkpoint_path = CHECKPOINT_PATH
 checkpoint_dir = os.path.dirname(checkpoint_path)
@@ -46,8 +46,7 @@ val_ds = tf.keras.preprocessing.image_dataset_from_directory(
     subset = "validation",
     seed=123,
     image_size = (img_height, img_width),
-    batch_size = batch_size
-
+    batch_size = batch_size 
 )
 
 #We can get the classnames from the dataset class_names attribute
@@ -78,13 +77,13 @@ def create_model():
     normalization_layer = layers.experimental.preprocessing.Rescaling(1./255,)
     # We will include this normalization layer inside our model definition
 
-    # Crate the damn model - note that this model has not been tuned for accuracy
+    # Crate the model - note that this model has not been tuned for accuracy
     # Aim for 80% accuracy with saberface mk-1
 
     #If left as is, the model will overfit and the accuracy will stall around 60% in the training process
     #We will  use data augmentation, L2 weight regularlization, and dropout to counter overfitting
 
-    num_classes = 5 
+    num_classes = 2
 
     # Data augmentation: When we generate additional training data from existing examples by augmenting 
     # them with random transformations to yield believable looking images
@@ -107,6 +106,8 @@ def create_model():
     model = Sequential([
         data_augmentation,
         layers.experimental.preprocessing.Rescaling(1./255),
+        layers.Conv2D(8, 3, padding='same', activation='relu'),
+        layers.MaxPooling2D(),
         layers.Conv2D(16, 3, padding='same', activation='relu'),
         layers.MaxPooling2D(),
         layers.Conv2D(32, 3, padding='same', activation='relu'),
@@ -114,9 +115,15 @@ def create_model():
         layers.Conv2D(64, 3, padding='same', activation='relu'),
         layers.MaxPooling2D(),
         # Randomly dropout 20% of the output units
-        layers.Dropout(0.2),
+        layers.Dropout(0.20),
         layers.Flatten(),    
         layers.Dense(128, activation='relu'),
+        layers.Dense(64, activation='relu'),
+        layers.Dense(64, activation='relu'),
+        layers.Dense(32, activation='relu'),
+        layers.Dense(32, activation='relu'),
+        layers.Dense(16, activation='relu'),
+        layers.Dense(16, activation='relu'),
         layers.Dense(num_classes)
     ])
 
@@ -142,7 +149,7 @@ if __name__ == "__main__":
         )
 
     # Train dat boi & save it
-    epochs = 16
+    epochs = 50
     history = model.fit(
     train_ds,
     validation_data = val_ds,
